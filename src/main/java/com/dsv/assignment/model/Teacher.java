@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 public class Teacher {
     @Id
+    @Column(name = "teacher_id")
     private Long teacherId;
 
     @ManyToOne

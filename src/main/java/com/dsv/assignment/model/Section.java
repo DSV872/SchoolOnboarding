@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 public class Section {
     @Id
+    @Column(name = "section_id")
     private Long sectionId;
 
     @ManyToOne
