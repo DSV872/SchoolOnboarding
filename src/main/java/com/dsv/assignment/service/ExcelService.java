@@ -63,11 +63,13 @@ public class ExcelService {
         var studentMap = excelReader.toMap(students,Student::getStudentId);
 
         //reading and saving studentAcademic map
-        var studentAcademicMaps = excelReader.readStudentAcademicMap("student_academic_map.xlsx",studentMap,gradeMap,sectionMap);
+        var studentAcademicMaps = excelReader.readStudentAcademicMap("/home/dsv/student_academic_map.xlsx",studentMap,gradeMap,sectionMap);
         studentAcademicMapDao.saveAll(studentAcademicMaps);
 
 
-        //reading and saving
+        //reading and saving teacheracademic map
+        var teacherAcademicMaps = excelReader.readTeacherSectionMap("/home/dsv/teacher_section_map.xlsx",teacherMap,sectionMap,subjectMap);
+        teacherSectionMapDao.saveAll(teacherAcademicMaps);
 
     }
 }
