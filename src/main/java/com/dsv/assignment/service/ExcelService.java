@@ -11,6 +11,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ExcelService {
@@ -36,6 +38,16 @@ public class ExcelService {
     private TeacherSectionMapDao teacherSectionMapDao;
     @Autowired
     private AttendanceDao attendanceDao;
+    @Autowired
+    private ClassDiaryDao classDiaryDao;
+    @Autowired
+    private FeesDao feesDao;
+    @Autowired
+    private HomeworkDao homeworkDao;
+    @Autowired
+    private SalaryDao salaryDao;
+    @Autowired
+    private TimetableDao timetableDao;
 
     public void  run() throws IOException {
         //reading and saving schools
@@ -68,41 +80,37 @@ public class ExcelService {
         studentDao.saveAll(students);
         var studentMap = excelReader.toMap(students,Student::getStudentId);
 
+        //reading and saving AttendanceRegister
+        var attendanceData = excelReader.readAttendanceRegister(BASE_PATH+"attendance.xlsx",studentMap);
+        attendanceDao.saveAll(attendanceData);
+
+        //reading and saving classDiary
+        var classDiaryData = excelReader.readClassDiary(BASE_PATH+"class_diary.xlsx", teacherMap);
+        classDiaryDao.saveAll(classDiaryData);
+
+        //reading and saving fees
+        var feesData = excelReader.readFees(BASE_PATH+"fees.xlsx",studentMap);
+        feesDao.saveAll(feesData);
+
         //reading and saving studentAcademic map
         var studentAcademicMaps = excelReader.readStudentAcademicMap(BASE_PATH+"student_academic_map.xlsx",studentMap,gradeMap,sectionMap);
         studentAcademicMapDao.saveAll(studentAcademicMaps);
 
+        //reading and saving homework data
+        var homeworkData = excelReader.readHomework(BASE_PATH+"homework.xlsx",teacherMap);
+        homeworkDao.saveAll(homeworkData);
 
-        //reading and saving teacheracademic map
-        var teacherAcademicMaps = excelReader.readTeacherSectionMap(BASE_PATH+"teacher_section_map.xlsx",teacherMap,sectionMap,subjectMap);
-        teacherSectionMapDao.saveAll(teacherAcademicMaps);
+        //reading and saving salary data
+        var salaryData = excelReader.readSalary(BASE_PATH+"salary.xlsx",teacherMap);
+        salaryDao.saveAll(salaryData);
 
-        generateAttendance(students);
-    }
-    private void generateAttendance(List<Student> students){
-        List<AttendanceRegister> attendanceList = new ArrayList<>();
-        LocalDate startDate = LocalDate.of(2024,6,1);
-        LocalDate endDate = LocalDate.of(2024,6,30);
+        //reading and saving timetable data
+        var timetableData = excelReader.readTimetable(BASE_PATH+"timetable.xlsx",teacherMap,sectionMap);
+        timetableDao.saveAll(timetableData);
 
-        for(Student student : students){
-            List<LocalDate> dates = startDate.datesUntil(endDate.plusDays(1)).toList();
-
-            //Ensure at least 80% present
-            int totalDays = dates.size();
-            int presentDays = (int) Math.ceil(totalDays*0.8);
-
-            //shuffle dates so presence/absence is randome
-            Collections.shuffle(dates);
-
-            for (int i = 0; i < dates.size();i++){
-                AttendanceRegister record = new AttendanceRegister();
-                record.setStudent(student);
-                record.setDate(dates.get(i));
-                record.setStatus(i < presentDays ? "Present" : "Absent");
-                attendanceList.add(record);
-            }
-        }
-        attendanceDao.saveAll(attendanceList);
+        //reading and saving teachersection map
+        var teacherSectionMaps = excelReader.readTeacherSectionMap(BASE_PATH+"teacher_section_map.xlsx",teacherMap,sectionMap,subjectMap);
+        teacherSectionMapDao.saveAll(teacherSectionMaps);
 
     }
 }

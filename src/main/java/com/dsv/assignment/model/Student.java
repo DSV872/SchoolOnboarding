@@ -2,6 +2,8 @@ package com.dsv.assignment.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -16,9 +18,11 @@ public class Student {
     private School school;
 
     private String studentName;
-    @Temporal(TemporalType.DATE)
-    private Date dob;
+
+    private LocalDate dob;
+
     private String gender;
+
 
     @OneToMany(mappedBy = "student")
     private List<StudentAcademicMap> studentAcademicMaps;

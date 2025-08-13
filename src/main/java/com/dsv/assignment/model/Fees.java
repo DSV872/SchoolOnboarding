@@ -16,7 +16,7 @@ public class Fees {
     @JoinColumn(name = "student_id")
     private Student student;
 
-    private LocalDate paymentDate;
+    private LocalDate date;
 
     private Double amount;
 }

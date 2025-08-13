@@ -22,4 +22,3 @@ public class AttendanceRegister {
 
     private String status; //present or absent
 }
-

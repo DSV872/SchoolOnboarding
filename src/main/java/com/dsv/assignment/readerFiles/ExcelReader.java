@@ -1,15 +1,15 @@
 package com.dsv.assignment.readerFiles;
 
 import com.dsv.assignment.model.*;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.function.Function;
@@ -147,8 +147,31 @@ public class ExcelReader {
                 student.setSchool(schoolMap.get(schoolId));
 
                 student.setStudentName(row.getCell(2).getStringCellValue());
-                student.setDob(row.getCell(3).getDateCellValue());
+
+                Cell cell = row.getCell(3);
+                if(cell != null){
+                    if(cell.getCellType() == CellType.NUMERIC){
+                        if(DateUtil.isCellDateFormatted(cell)){
+                            student.setDob(cell.getLocalDateTimeCellValue().toLocalDate());
+                        }
+                        else {
+                            throw new IllegalArgumentException("Invalid date format in Excel");
+                        }
+                    }
+                    else if (cell.getCellType()==CellType.STRING){
+                        String dateStr = cell.getStringCellValue().trim();
+                        LocalDate dob = LocalDate.parse(dateStr,DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                        student.setDob(dob);
+                    }
+                    else {
+                        throw  new IllegalArgumentException("Unsupported cell type for DOB");
+                    }
+                }
+//                String text =  row.getCell(3).getStringCellValue();
+//                System.out.println(text);
+
                 student.setGender(row.getCell(4).getStringCellValue());
+
 
                 students.add(student);
             }
@@ -165,14 +188,30 @@ public class ExcelReader {
             for (int i = 1; i <= sheet.getLastRowNum();i++){
                 Row row = sheet.getRow(i);
                 Homework homework = new Homework();
-                homework.setId((long)row.getCell(0).getNumericCellValue());
 
-                Long teacherId = (long)row.getCell(1).getNumericCellValue();
+                Long teacherId = (long)row.getCell(0).getNumericCellValue();
                 homework.setTeacher(teacherMap.get(teacherId));
 
-                homework.setStatus(row.getCell(2).getStringCellValue());
-                homework.setAssignedDate(row.getCell(3).getLocalDateTimeCellValue().toLocalDate());
-                homework.setDescription(row.getCell(4).getStringCellValue());
+                homework.setStatus(row.getCell(1).getStringCellValue());
+
+                Cell cell = row.getCell(2);
+                if (cell != null){
+                    if (cell.getCellType() == CellType.NUMERIC){
+                        if(DateUtil.isCellDateFormatted(cell)){
+                            homework.setAssignedDate(cell.getLocalDateTimeCellValue().toLocalDate());
+                        }
+                        else {
+                            throw new IllegalArgumentException("Invalid date format in Excel");
+                        }
+                    } else if (cell.getCellType() == CellType.STRING) {
+                        String dateStr = cell.getStringCellValue().trim();
+                        LocalDate assignedDate = LocalDate.parse(dateStr,DateTimeFormatter.ofPattern("dd/MM/yyy"));
+                        homework.setAssignedDate(assignedDate);
+                    }else {
+                        throw new IllegalArgumentException("Unsupported cell type for assignedDate");
+                    }
+                }
+                homework.setDescription(row.getCell(3).getStringCellValue());
 
                 homeworks.add(homework);
             }
@@ -189,11 +228,10 @@ public class ExcelReader {
             for (int i = 1; i <= sheet.getLastRowNum();i++){
                 Row row = sheet.getRow(i);
                 Salary salary = new Salary();
-                salary.setId((long)row.getCell(0).getNumericCellValue());
-                Long id = (long)row.getCell(1).getNumericCellValue();
+                Long id = (long)row.getCell(0).getNumericCellValue();
                 salary.setTeacher(teacherMap.get(id));
-                salary.setMonth(row.getCell(2).getStringCellValue());
-                salary.setAmount(row.getCell(3).getNumericCellValue());
+                salary.setMonth(row.getCell(1).getStringCellValue());
+                salary.setAmount(row.getCell(2).getNumericCellValue());
 
                 salaries.add(salary);
             }
@@ -210,12 +248,26 @@ public class ExcelReader {
             for (int i = 1; i<=sheet.getLastRowNum();i++){
                 Row row = sheet.getRow(i);
                 ClassDiary classDiary = new ClassDiary();
-                classDiary.setId((long)row.getCell(0).getNumericCellValue());
-                Long id =(long) row.getCell(1).getNumericCellValue();
+                Long id =(long) row.getCell(0).getNumericCellValue();
                 classDiary.setTeacher(teacherMap.get(id));
-                LocalDate date = row.getCell(2).getLocalDateTimeCellValue().toLocalDate();
-                classDiary.setDate(date);
-                classDiary.setNotes(row.getCell(3).getStringCellValue());
+                Cell cell = row.getCell(1);
+                if (cell != null){
+                    if (cell.getCellType() == CellType.NUMERIC){
+                        if(DateUtil.isCellDateFormatted(cell)){
+                            classDiary.setDate(cell.getLocalDateTimeCellValue().toLocalDate());
+                        }
+                        else {
+                            throw new IllegalArgumentException("Invalid date format in Excel");
+                        }
+                    } else if (cell.getCellType() == CellType.STRING) {
+                        String dateStr = cell.getStringCellValue().trim();
+                        LocalDate date = LocalDate.parse(dateStr,DateTimeFormatter.ofPattern("dd/MM/yyy"));
+                        classDiary.setDate(date);
+                    }else {
+                        throw new IllegalArgumentException("Unsupported cell type for assignedDate");
+                    }
+                }
+                classDiary.setNotes(row.getCell(2).getStringCellValue());
 
                 classDiaries.add(classDiary);
             }
@@ -232,12 +284,29 @@ public class ExcelReader {
             for (int i = 1; i<=sheet.getLastRowNum();i++){
                 Row row = sheet.getRow(i);
                 Fees fee = new Fees();
-                fee.setId((long)row.getCell(0).getNumericCellValue());
-                Long id =(long) row.getCell(1).getNumericCellValue();
+
+                Long id =(long) row.getCell(0).getNumericCellValue();
                 fee.setStudent(studentMap.get(id));
-                LocalDate paymentDate = row.getCell(2).getLocalDateTimeCellValue().toLocalDate();
-                fee.setPaymentDate(paymentDate);
-                fee.setAmount(row.getCell(3).getNumericCellValue());
+
+                Cell cell = row.getCell(1);
+                if (cell != null){
+                    if (cell.getCellType() == CellType.NUMERIC){
+                        if(DateUtil.isCellDateFormatted(cell)){
+                            fee.setDate(cell.getLocalDateTimeCellValue().toLocalDate());
+                        }
+                        else {
+                            throw new IllegalArgumentException("Invalid date format in Excel");
+                        }
+                    } else if (cell.getCellType() == CellType.STRING) {
+                        String dateStr = cell.getStringCellValue().trim();
+                        LocalDate Date = LocalDate.parse(dateStr,DateTimeFormatter.ofPattern("dd/MM/yyy"));
+                        fee.setDate(Date);
+                    }else {
+                        throw new IllegalArgumentException("Unsupported cell type for assignedDate");
+                    }
+                }
+
+                fee.setAmount(row.getCell(2).getNumericCellValue());
 
                 fees.add(fee);
             }
@@ -256,18 +325,60 @@ public class ExcelReader {
             for (int i = 1; i<=sheet.getLastRowNum();i++){
                 Row row = sheet.getRow(i);
                 Timetable timetable = new Timetable();
-                timetable.setId((long)row.getCell(0).getNumericCellValue());
-                Long id = (long)row.getCell(1).getNumericCellValue();
+                Long id = (long)row.getCell(0).getNumericCellValue();
                 timetable.setSection(sectionMap.get(id));
-                timetable.setDayOfWeek(row.getCell(2).getStringCellValue());
-                timetable.setPeriod(row.getCell(3).getStringCellValue());
-                Long id2 =(long) row.getCell(4).getNumericCellValue();
-                timetable.setTeacher(teacherMap.get(id2));
-
+                timetable.setDayOfWeek(row.getCell(1).getStringCellValue());
+                timetable.setPeriod(row.getCell(2).getStringCellValue());
+                Cell cell = row.getCell(3);
+                Long id2 = null;
+                if(cell != null && cell.getCellType()==CellType.NUMERIC){
+                    id2 =(long) cell.getNumericCellValue();
+                    timetable.setTeacher(teacherMap.get(id2));
+                }
                 timetables.add(timetable);
             }
         }
         return timetables;
+    }
+
+    //AttendanceRegister
+    public List<AttendanceRegister> readAttendanceRegister(String filePath,Map<Long,Student> studentMap) throws IOException{
+        List<AttendanceRegister> attendanceRegisters = new ArrayList<>();
+        try(FileInputStream fis = new FileInputStream(filePath);
+        Workbook workbook = new XSSFWorkbook(fis)){
+            Sheet sheet = workbook.getSheetAt(0);
+            for (int i = 1  ; i <= sheet.getLastRowNum();i++){
+                Row row = sheet.getRow(i);
+                AttendanceRegister attendanceRegister = new AttendanceRegister();
+
+                Long studentId = (long)row.getCell(0).getNumericCellValue();
+                attendanceRegister.setStudent(studentMap.get(studentId));
+
+                Cell cell = row.getCell(1);
+                if(cell != null){
+                    if(cell.getCellType() == CellType.NUMERIC){
+                        if(DateUtil.isCellDateFormatted(cell)){
+                            attendanceRegister.setDate(cell.getLocalDateTimeCellValue().toLocalDate());
+                        }
+                        else {
+                            throw new IllegalArgumentException("Invalid date format in Excel");
+                        }
+                    }
+                    else if(cell.getCellType() == CellType.STRING){
+                        String dateStr = cell.getStringCellValue().trim();
+                        LocalDate date= LocalDate.parse(dateStr,DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                        attendanceRegister.setDate(date);
+                    }
+                    else {
+                        throw new IllegalArgumentException("Unsupported cell type for date");
+                    }
+                }
+                attendanceRegister.setStatus(row.getCell(2).getStringCellValue());
+
+                attendanceRegisters.add(attendanceRegister);
+            }
+        }
+        return attendanceRegisters;
     }
     //STUDENT ACADEMIC MAP
     public List<StudentAcademicMap> readStudentAcademicMap(String filePath,
